@@ -1,0 +1,16 @@
+{
+  "name": "Comparateur cartes contrôle d'accès Fichet",
+  "short_name": "Comparateur Fichet",
+  "description": "Comparateur SM400 / SM100+ / Wave IO pour les commerciaux Fichet",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0A0A",
+  "theme_color": "#9D695A",
+  "lang": "fr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
