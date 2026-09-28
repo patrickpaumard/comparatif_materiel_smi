@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comparateur cartes — contrôle d'accès</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#8C6E82">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Comparateur Fichet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F3F0F2;
+    --surface: #FFFFFF;
+    --ink: #2B2732;
+    --ink-dim: #8B8290;
+    --brown: #8C6E82;
+    --line: rgba(43,39,50,0.13);
+    --font-display: "Space Grotesk", system-ui, -apple-system, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16141B;
+      --surface: #211E27;
+      --ink: #EDE7EA;
+      --ink-dim: #ABA0AB;
+      --brown: #C9A0BC;
+      --line: rgba(237,231,234,0.14);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16141B;
+    --surface: #211E27;
+    --ink: #EDE7EA;
+    --ink-dim: #ABA0AB;
+    --brown: #C9A0BC;
+    --line: rgba(237,231,234,0.14);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    background:
+      radial-gradient(circle at 4px 4px, rgba(140,110,130,0.14) 1px, transparent 1px) 0 0/26px 26px,
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  header {
+    padding: 22px 20px 6px;
+    padding-top: calc(22px + env(safe-area-inset-top, 0px));
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .theme-toggle {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--brown);
+    margin: 0 0 6px;
+    text-transform: uppercase;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; line-height: 1.25; color: var(--ink); }
+
+  /* Tab-style rail, like index-card dividers */
+  .rail-wrap { padding: 18px 20px 4px; }
+  .rail {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .rail button {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-bottom: 4px solid var(--line);
+    border-radius: 10px 10px 6px 6px;
+    color: var(--ink-dim);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 11px 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .rail button.active {
+    color: var(--ink);
+    border-color: var(--fam-deep, var(--brown));
+    border-bottom-color: var(--fam-deep, var(--brown));
+    background: var(--fam, var(--surface));
+  }
+
+  main { padding: 20px; padding-bottom: 60px; }
+
+  .hero {
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 22px;
+    background: var(--surface);
+    position: relative;
+    border-top: 6px solid var(--fam-deep, var(--brown));
+  }
+  .hero-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    margin: 0 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .hero-name { font-size: 25px; font-weight: 700; margin: 0 0 10px; color: var(--ink); }
+  .hero-subtitle { font-size: 14px; font-weight: 500; color: var(--ink-dim); margin: -6px 0 10px; }
+  .hero-stat-row { display: flex; gap: 26px; flex-wrap: wrap; margin: 14px 0 10px; }
+  .hero-stat-row .hero-stat { margin: 0; }
+  .hero-stat { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 10px; }
+  .hero-stat .num { font-size: 44px; font-weight: 700; color: var(--fam-ink, var(--brown)); line-height: 1; }
+  .hero-stat .lbl { font-size: 13px; color: var(--ink-dim); line-height: 1.3; }
+  .hero-summary { font-size: 14.5px; line-height: 1.55; color: var(--ink); margin: 10px 0 0; }
+
+  .dip-wrap { margin-top: 16px; }
+  .dip-title { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); margin: 0 0 8px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .dip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dip {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 2px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dip.active {
+    border-color: var(--fam-deep, var(--brown));
+    color: var(--ink);
+    background: var(--fam, var(--surface));
+    font-weight: 600;
+  }
+
+  .facts { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fact { border: 2px solid var(--line); border-radius: 10px; padding: 12px 13px; background: var(--bg); }
+  .fact .v { font-family: var(--font-mono); font-size: 15px; color: var(--ink); font-weight: 600; display: block; margin-bottom: 3px; }
+  .fact .k { font-size: 11.5px; color: var(--ink-dim); line-height: 1.3; }
+
+  .banner {
+    margin-top: 14px;
+    border: 2px solid var(--brown);
+    background: rgba(140,110,130,0.16);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  .banner.info { background: rgba(140,110,130,0.09); }
+
+  .open-sheet {
+    margin-top: 20px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 2px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .open-sheet:active { opacity: 0.85; }
+
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(58,42,38,0.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-height: 82vh;
+    background: var(--surface);
+    border-top: 3px solid var(--ink);
+    border-radius: 18px 18px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.38s cubic-bezier(.32,.72,0,1);
+    z-index: 11;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--line); border-radius: 3px; margin: 10px auto 4px; }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px 14px; border-bottom: 2px solid var(--line); }
+  .sheet-head h2 { font-size: 17px; margin: 0; color: var(--ink); }
+  .sheet-close { background: var(--bg); border: 2px solid var(--line); color: var(--ink); width: 30px; height: 30px; border-radius: 50%; font-size: 15px; cursor: pointer; }
+  .sheet-body { padding: 16px 20px 30px; overflow-y: auto; max-height: calc(82vh - 70px); }
+  .spec-group { margin-bottom: 20px; }
+  .spec-group h3 {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--fam-ink, var(--brown)); text-transform: uppercase;
+    margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--line);
+  }
+  .spec-row { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; font-size: 13.5px; border-bottom: 1px dashed var(--line); }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-row .sk { color: var(--ink-dim); flex-shrink: 0; }
+  .spec-row .sv { font-family: var(--font-mono); text-align: right; color: var(--ink); }
+  .sv.tbd { color: var(--brown); font-weight: 600; }
+
+  @media (min-width: 640px) {
+    main { max-width: 560px; margin: 0 auto; }
+    header { max-width: 560px; margin: 0 auto; width: 100%; }
+    .rail-wrap { max-width: 560px; margin: 0 auto; width: 100%; }
+    .sheet { max-width: 560px; margin: 0 auto; left: 0; right: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <p class="eyebrow">FICHET · CONTRÔLE D'ACCÈS</p>
+    <h1>Quelle carte pour quel besoin ?</h1>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Changer de thème">🌙</button>
+</header>
+
+<div class="rail-wrap">
+  <div class="rail" id="rail">
+    <button data-family="sm400">SM400</button>
+    <button data-family="sm100">SM100+</button>
+    <button data-family="waveio">WAVE IO</button>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 id="sheetTitle">Fiche technique</h2>
+    <button class="sheet-close" id="sheetClose">✕</button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<script>
+const DATA = {
+  sm400: {
+    label: "SM400",
+    fullName: (v) => `SM400 ${v.label} — Contrôleur de bus`,
+    summary: "Le contrôleur central : il pilote les cartes SM100+ (portes) et Wave IO (entrées/sorties) réparties sur 3 bus. Le choix de la variante dépend uniquement de la capacité d'accueil dont le site a besoin.",
+    variants: [
+      { id: "l8", label: "L-8", sm100: 8, waveio: 3 },
+      { id: "l16", label: "L-16", sm100: 16, waveio: 3 },
+      { id: "l24", label: "L-24", sm100: 24, waveio: 3 },
+      { id: "lfull", label: "Full", sm100: 24, waveio: 24 }
+    ],
+    heroStat: (v) => ({ num: v.sm100, lbl: "SM100+ maxi à répartir sur les 3 bus" }),
+    facts: (v) => [
+      { v: "Wave IO maximum", k: v.waveio + " (tous modèles confondus)" },
+      { v: "Bus périphériques", k: "3 × RS-485" },
+      { v: "Badges gérés", k: "50 000 (1 badge = 1 usager)" },
+      { v: "Alimentation", k: "+12V / +24V" },
+    ],
+    banner: "Portée de bus RS-485 : environ 1000 m en théorie. En retour d'expérience terrain, il est recommandé de prévoir plutôt 700 à 800 m, pour tenir compte des pertes liées aux épissures et boîtes de jonction.",
+    bannerType: "info",
+    sheet: [
+      { title: "Alimentation & consommation", rows: [
+        ["Tension", "+12V / +24V"],
+        ["Consommation", "200 mA / 120 mA — deux valeurs mesurées, correspondance exacte avec la tension à reconfirmer avant diffusion", true],
+      ]},
+      { title: "Communication", rows: [
+        ["Bus périphériques", "3 × RS-485"],
+        ["Portée théorique", "Environ 1000 m"],
+        ["Portée en retour d'expérience terrain", "700 à 800 m, pertes liées aux épissures et boîtes de jonction incluses"],
+        ["Liaison serveur", "IP vers SMI Server"],
+      ]},
+      { title: "Capacité", rows: [
+        ["Badges", "50 000 (soit 50 000 usagers, à raison d'1 badge par personne)"],
+      ]},
+      { title: "Fiabilité & sécurité", rows: [
+        ["Pile de sauvegarde", "Oui"],
+        ["Autoprotection", "Protégé contre l'ouverture"],
+      ]},
+    ]
+  },
+  sm100: {
+    label: "SM100+",
+    fullName: (v) => `SM100+ ${v.label}`,
+    subtitle: "Gestion de porte",
+    summary: "Une carte unique permet de gérer jusqu'à deux portes. Le mode de fonctionnement — 1 accès simple, 2 accès simples, ou 1 accès double sens — relève uniquement de la programmation : il n'est jamais nécessaire de changer de carte pour modifier la configuration.",
+    variants: [
+      { id: "simple1", label: "1 accès simple", desc: "Une porte gérée dans un seul sens de circulation." },
+      { id: "simple2", label: "2 accès simples", desc: "Deux portes indépendantes, chacune gérée dans un seul sens de circulation." },
+      { id: "double", label: "1 accès double sens", desc: "Une porte gérée dans les deux sens (entrée et sortie), permettant le comptage et l'anti-passback." }
+    ],
+    heroStat: () => ({ num: "2", lbl: "portes gérées par une seule carte" }),
+    facts: (v) => {
+      const entriesByVariant = {
+        simple1: "3 sur 6 actives (CP1/CV1/BP1)<br>3 entrées libres pour tout autre usage (ex. intrusion)",
+        simple2: "6 sur 6 actives : CP/CV/BP × 2 portes.<br>Toutes les entrées sont occupées, aucune n'est disponible pour un autre usage.",
+        double: "2 sur 6 actives : CP et CV.<br>4 entrées disponibles pour un autre usage : BP (sa fonction est assurée par le lecteur en sortie), ainsi que les trois entrées normalement dédiées à une seconde porte.",
+      };
+      return [
+        { v: "Alimentation", k: "+12V/+24V, au choix sur la même carte" },
+        { v: "Entrées", k: entriesByVariant[v.id] },
+        { v: "Relais", k: "2 (pilotage des gâches/serrures des 2 portes)" },
+        { v: "Module SAM", k: "Hardware EAL5+ disponible sur la carte, ou version logicielle" },
+      ];
+    },
+    banner: "Compatible têtes de lecture Wiegand — mais ce protocole est en fin de vie : il ne peut pas être chiffré. À remplacer progressivement par OSDPv2 ou SSCP (chiffrés) chez les clients sensibles à la sécurité.",
+    bannerType: "warn",
+    sheet: [
+      { title: "Modes de fonctionnement", rows: [
+        ["Changement de mode", "Programmation uniquement — aucune nouvelle carte à acheter"],
+        ["Mode 1", "1 accès simple"],
+        ["Mode 2", "2 accès simples"],
+        ["Mode 3", "1 accès double sens (comptage + anti-passback)"],
+      ]},
+      { title: "Alimentation", rows: [
+        ["Tension", "+12V ou +24V, au choix sur la même carte"],
+      ]},
+      { title: "Entrées / Sorties", rows: [
+        ["Entrées", "6 (2 portes × 3 infos : CP, CV, BP sortie)"],
+        ["CP", "Contact de porte"],
+        ["CV", "Contact de verrouillage (pênes = porte verrouillée)"],
+        ["BP", "Bouton poussoir de sortie"],
+        ["Relais", "2 (pilotage des 2 portes)"],
+        ["Entrées en mode 1 accès simple", "3 entrées (CP1/CV1/BP1) affectées à la porte ; les 3 autres (CP2/CV2/BP2), normalement dédiées à une seconde porte, sont libérées de toute fonction et deviennent configurables librement — par exemple pour de l'intrusion (libellés \"BBG vert\", \"DM vert\")"],
+        ["Entrées en mode 1 accès double sens", "Seules CP et CV sont occupées. BP n'est pas utilisée : la sortie se fait via le lecteur, pas un bouton poussoir. Les 3 entrées normalement dédiées à une seconde porte sont également libres, soit 4 entrées disponibles sur 6."],
+        ["Second lecteur", "Pas de carte fille nécessaire, tout est prévu nativement"],
+      ]},
+      { title: "Sécurité & certification", rows: [
+        ["Certification", "SM100+ + lecteur Prostyle = conforme norme ANSSI"],
+        ["Badges compatibles", "DESFire EV1/EV2/EV3, AV1/AV2/AV3"],
+        ["Module SAM", "Logiciel ou hardware EAL5+ (montable sur la carte)"],
+        ["Têtes de lecture", "Wiegand (fin de vie, non chiffrable) — migration recommandée vers OSDPv2 / SSCP"],
+        ["Protection physique", "Ouverture + arrachement"],
+      ]},
+      { title: "Mémoire (mode dégradé)", rows: [
+        ["Passages mémorisés", "1000 derniers, si perte de liaison serveur"],
+        ["Événements mémorisés", "1500 derniers (hors contrôle d'accès)"],
+      ]},
+      { title: "Compatibilité parc existant", rows: [
+        ["Remplace", "SM100 (ancienne génération)"],
+        ["Form factor", "Identique — remplacement direct"],
+      ]},
+    ]
+  },
+  waveio: {
+    label: "Wave IO",
+    fullName: (v) => `Wave ${v.label} — Carte Entrées / Sorties`,
+    summary: "Gère les entrées et sorties qui ne concernent pas directement une porte : détecteurs, alarmes, périphériques divers. Le choix se fait sur la capacité d'entrées et le type de sortie — transistorisée, relayée, ou les deux combinées sur l'IO40.",
+    variants: [
+      { id: "io12", label: "IO12", volt: "+12V", in: 8, out: "4 transistorisées", outNum: "4", outLabel: "sorties transistorisées" },
+      { id: "io12r", label: "IO12R", volt: "+12V/+24V", in: 8, out: "4 relayées", outNum: "4", outLabel: "sorties relayées" },
+      { id: "io36", label: "IO36", volt: "+12V", in: 24, out: "12 transistorisées", outNum: "12", outLabel: "sorties transistorisées" },
+      { id: "io40", label: "IO40", volt: "+12V/+24V", in: 24, out: "8 transistorisées + 8 relayées", outNum: "8+8", outLabel: "sorties (transistorisées + relayées)" },
+    ],
+    heroStat: (v) => ([
+      { num: v.in, lbl: "entrées disponibles" },
+      { num: v.outNum, lbl: v.outLabel },
+    ]),
+    facts: (v) => [
+      { v: "Alimentation", k: v.volt },
+      { v: "Sorties", k: v.out },
+      { v: "Certification", k: "Grade 3 (toutes variantes)" },
+      { v: "Entrées", k: v.in + " entrées :<br>TOR (tout ou rien)<br>Équilibrées (2×330Ω)<br>Réglables une à une" },
+    ],
+    banner: "Les valeurs (courant/puissance) des sorties transistorisées et relayées restent à confirmer auprès du support technique avant de les communiquer en clientèle.",
+    bannerType: "warn",
+    sheet: [
+      { title: "Entrées", rows: [
+        ["Type", "TOR (tout ou rien) ou équilibrées, 2×330Ω"],
+        ["Réglage", "Définissable entrée par entrée (valeur de résistance)"],
+        ["Usage", "Surveillance de lignes des points d'alarme"],
+      ]},
+      { title: "Sécurité & certification", rows: [
+        ["Protection physique", "Ouverture + arrachement"],
+        ["Grade", "3 (toutes variantes)"],
+      ]},
+      { title: "Compatibilité form factor", rows: [
+        ["IO12 / IO12R", "Même form factor"],
+        ["IO36 / IO40", "Même form factor"],
+      ]},
+      { title: "Valeurs à reconfirmer", rows: [
+        ["Puissance/courant des sorties", "Non communiquée pour l'instant — à vérifier avant argumentaire client", true],
+      ]},
+    ]
+  }
+};
+
+let currentFamily = "sm400";
+let currentVariantIdx = 0;
+
+const railBtns = document.querySelectorAll('.rail button');
+const mainEl = document.getElementById('main');
+const scrim = document.getElementById('scrim');
+const sheet = document.getElementById('sheet');
+const sheetBody = document.getElementById('sheetBody');
+const sheetTitle = document.getElementById('sheetTitle');
+
+function render() {
+  const fam = DATA[currentFamily];
+  const variant = fam.variants[currentVariantIdx];
+  document.body.setAttribute('data-family', currentFamily);
+  railBtns.forEach(b => b.classList.toggle('active', b.dataset.family === currentFamily));
+
+  const stat = fam.heroStat(variant);
+  const facts = fam.facts(variant);
+
+  let variantHtml = '';
+  if (fam.variants.length > 1) {
+    variantHtml = `
+    <div class="dip-wrap">
+      <p class="dip-title">Variante</p>
+      <div class="dip-row">
+        ${fam.variants.map((v,i) => `<button class="dip ${i===currentVariantIdx?'active':''}" data-vidx="${i}">${v.label}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  mainEl.innerHTML = `
+    <div class="hero">
+      ${typeof fam.fullName === 'function' ? '' : `<p class="hero-label">${fam.label}${variant.label && fam.variants.length>1 ? ' — ' + variant.label : ''}</p>`}
+      <h2 class="hero-name">${typeof fam.fullName === 'function' ? fam.fullName(variant) : fam.fullName}</h2>
+      ${fam.subtitle ? `<p class="hero-subtitle">${fam.subtitle}</p>` : ''}
+      ${Array.isArray(stat)
+        ? `<div class="hero-stat-row">${stat.map(s => `
+            <div class="hero-stat">
+              <span class="num">${s.num}</span>
+              <span class="lbl">${s.lbl}</span>
+            </div>`).join('')}</div>`
+        : `<div class="hero-stat">
+            <span class="num">${stat.num}</span>
+            <span class="lbl">${stat.lbl}</span>
+          </div>`}
+      <p class="hero-summary">${fam.summary}${variant.desc ? ' <br><br><strong>' + variant.label + '</strong> : ' + variant.desc : ''}</p>
+      ${variantHtml}
+      <div class="facts">
+        ${facts.map(f => `<div class="fact"><span class="v">${f.v}</span><span class="k">${f.k}</span></div>`).join('')}
+      </div>
+      ${fam.banner ? `<div class="banner ${fam.bannerType==='info'?'info':''}">${fam.banner}</div>` : ''}
+      <button class="open-sheet" id="openSheet">Voir la fiche technique complète</button>
+    </div>
+  `;
+
+  document.getElementById('openSheet').addEventListener('click', () => openSheet(fam, variant));
+  mainEl.querySelectorAll('.dip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentVariantIdx = parseInt(btn.dataset.vidx, 10);
+      saveState();
+      render();
+    });
+  });
+}
+
+function openSheet(fam, variant) {
+  const name = typeof fam.fullName === 'function' ? fam.fullName(variant) : fam.fullName;
+  const full = fam.subtitle ? name + ' · ' + fam.subtitle : name;
+  sheetTitle.textContent = full + ' — fiche complète';
+  sheetBody.innerHTML = fam.sheet.map(group => `
+    <div class="spec-group">
+      <h3>${group.title}</h3>
+      ${group.rows.map(r => `
+        <div class="spec-row">
+          <span class="sk">${r[0]}</span>
+          <span class="sv ${r[2] ? 'tbd' : ''}">${r[1]}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  scrim.classList.add('open');
+  sheet.classList.add('open');
+}
+
+function closeSheet() {
+  scrim.classList.remove('open');
+  sheet.classList.remove('open');
+}
+
+scrim.addEventListener('click', closeSheet);
+document.getElementById('sheetClose').addEventListener('click', closeSheet);
+
+railBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFamily = btn.dataset.family;
+    currentVariantIdx = 0;
+    saveState();
+    render();
+  });
+});
+
+function saveState() {
+  try { localStorage.setItem('comparateur-state', JSON.stringify({ f: currentFamily, v: currentVariantIdx })); } catch (e) {}
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem('comparateur-state');
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (DATA[s.f]) { currentFamily = s.f; currentVariantIdx = DATA[s.f].variants[s.v] ? s.v : 0; }
+    }
+  } catch (e) {}
+}
+
+function applyTheme(theme) {
+  if (theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  const isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+}
+
+function loadTheme() {
+  try {
+    const saved = localStorage.getItem('comparateur-theme');
+    applyTheme(saved || null);
+  } catch (e) { applyTheme(null); }
+}
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const isDarkNow = current === 'dark' || (!current && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const next = isDarkNow ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem('comparateur-theme', next); } catch (e) {}
+});
+
+loadTheme();
+loadState();
+render();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
